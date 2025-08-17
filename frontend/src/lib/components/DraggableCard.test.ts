@@ -1,0 +1,130 @@
+import { describe, it, expect, vi } from 'vitest';
+import { render, fireEvent } from '@testing-library/svelte';
+import Card from './Card.svelte';
+
+describe('Card Drag and Drop', () => {
+	it('enables dragging by default', () => {
+		const { container } = render(Card);
+		const card = container.querySelector('.card');
+		
+		expect(card?.getAttribute('role')).toBe('button');
+		expect(card?.getAttribute('tabindex')).toBe('0');
+	});
+
+	it('can be disabled from dragging', () => {
+		const { container } = render(Card, { 
+			props: { draggable: false } 
+		});
+		const card = container.querySelector('.card');
+		
+		// Should still have interactive attributes but won't handle drag
+		expect(card?.getAttribute('role')).toBe('button');
+	});
+
+	it('calls onPositionChange when drag ends', async () => {
+		const onPositionChange = vi.fn();
+		const { container } = render(Card, { 
+			props: { x: 50, y: 50, onPositionChange } 
+		});
+		const card = container.querySelector('.card') as HTMLElement;
+		
+		// Mock getBoundingClientRect
+		card.getBoundingClientRect = vi.fn(() => ({
+			left: 50,
+			top: 50,
+			width: 80,
+			height: 120,
+			right: 130,
+			bottom: 170,
+			x: 50,
+			y: 50,
+			toJSON: vi.fn()
+		}));
+
+		// Start drag
+		await fireEvent.mouseDown(card, { clientX: 75, clientY: 75 });
+		
+		// Move mouse
+		await fireEvent.mouseMove(document, { clientX: 125, clientY: 125 });
+		
+		// End drag
+		await fireEvent.mouseUp(document, { clientX: 125, clientY: 125 });
+		
+		expect(onPositionChange).toHaveBeenCalledWith(100, 100);
+	});
+
+	it('applies dragging class during drag operation', async () => {
+		const { container } = render(Card);
+		const card = container.querySelector('.card') as HTMLElement;
+		
+		// Mock getBoundingClientRect
+		card.getBoundingClientRect = vi.fn(() => ({
+			left: 0,
+			top: 0,
+			width: 80,
+			height: 120,
+			right: 80,
+			bottom: 120,
+			x: 0,
+			y: 0,
+			toJSON: vi.fn()
+		}));
+
+		expect(card?.classList.contains('dragging')).toBe(false);
+		
+		// Start drag
+		await fireEvent.mouseDown(card, { clientX: 40, clientY: 60 });
+		expect(card?.classList.contains('dragging')).toBe(true);
+		
+		// End drag
+		await fireEvent.mouseUp(document);
+		expect(card?.classList.contains('dragging')).toBe(false);
+	});
+
+	it('prevents dragging when draggable is false', async () => {
+		const onPositionChange = vi.fn();
+		const { container } = render(Card, { 
+			props: { draggable: false, onPositionChange } 
+		});
+		const card = container.querySelector('.card') as HTMLElement;
+		
+		await fireEvent.mouseDown(card, { clientX: 40, clientY: 60 });
+		await fireEvent.mouseMove(document, { clientX: 80, clientY: 100 });
+		await fireEvent.mouseUp(document);
+		
+		expect(onPositionChange).not.toHaveBeenCalled();
+		expect(card?.classList.contains('dragging')).toBe(false);
+	});
+
+	it('updates position during drag for smooth movement', async () => {
+		const { container } = render(Card, { 
+			props: { x: 0, y: 0 } 
+		});
+		const card = container.querySelector('.card') as HTMLElement;
+		
+		card.getBoundingClientRect = vi.fn(() => ({
+			left: 0,
+			top: 0,
+			width: 80,
+			height: 120,
+			right: 80,
+			bottom: 120,
+			x: 0,
+			y: 0,
+			toJSON: vi.fn()
+		}));
+
+		// Start drag
+		await fireEvent.mouseDown(card, { clientX: 40, clientY: 60 });
+		
+		// Move during drag
+		await fireEvent.mouseMove(document, { clientX: 80, clientY: 100 });
+		
+		// Check that position style updated
+		const style = card.getAttribute('style');
+		expect(style).toContain('left: 40px');
+		expect(style).toContain('top: 40px');
+		
+		await fireEvent.mouseUp(document);
+	});
+});
