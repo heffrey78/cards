@@ -3,6 +3,7 @@
 	import Card from '$lib/components/Card.svelte';
 
 	let cardPosition = $state({ x: 100, y: 100 });
+	let cardFlipped = $state(false);
 
 	function handleCardPositionChange(newX: number, newY: number) {
 		// Boundary checking - keep card within playing field
@@ -16,6 +17,10 @@
 
 		cardPosition = { x: constrainedX, y: constrainedY };
 	}
+
+	function handleCardFlipChange(flipped: boolean) {
+		cardFlipped = flipped;
+	}
 </script>
 
 <svelte:head>
@@ -26,6 +31,7 @@
 <main>
 	<h1>Card Game Engine</h1>
 	<p>Click and drag the card to move it around the playing field!</p>
+	<p>Double-click the card to flip it over and see the back design.</p>
 	
 	<div class="game-container">
 		<PlayingField>
@@ -34,7 +40,9 @@
 				rank="A"
 				x={cardPosition.x}
 				y={cardPosition.y}
+				flipped={cardFlipped}
 				onPositionChange={handleCardPositionChange}
+				onFlipChange={handleCardFlipChange}
 			/>
 		</PlayingField>
 	</div>

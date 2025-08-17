@@ -5,7 +5,7 @@ import Card from './Card.svelte';
 describe('Card', () => {
 	it('renders with default properties', () => {
 		const { container } = render(Card);
-		const card = container.querySelector('.card');
+		const card = container.querySelector('.card-container');
 		
 		expect(card).toBeTruthy();
 		expect(card?.getAttribute('style')).toContain('left: 0px');
@@ -18,7 +18,7 @@ describe('Card', () => {
 		const { container } = render(Card, { 
 			props: { x: 100, y: 50, width: 90, height: 130 } 
 		});
-		const card = container.querySelector('.card');
+		const card = container.querySelector('.card-container');
 		
 		expect(card?.getAttribute('style')).toContain('left: 100px');
 		expect(card?.getAttribute('style')).toContain('top: 50px');
@@ -52,13 +52,13 @@ describe('Card', () => {
 		const { container: heartsContainer } = render(Card, { 
 			props: { suit: '♥' } 
 		});
-		const heartsCard = heartsContainer.querySelector('.card');
+		const heartsCard = heartsContainer.querySelector('.card-front');
 		expect(heartsCard?.classList.contains('red')).toBe(true);
 
 		const { container: diamondsContainer } = render(Card, { 
 			props: { suit: '♦' } 
 		});
-		const diamondsCard = diamondsContainer.querySelector('.card');
+		const diamondsCard = diamondsContainer.querySelector('.card-front');
 		expect(diamondsCard?.classList.contains('red')).toBe(true);
 	});
 
@@ -66,13 +66,13 @@ describe('Card', () => {
 		const { container: spadesContainer } = render(Card, { 
 			props: { suit: '♠' } 
 		});
-		const spadesCard = spadesContainer.querySelector('.card');
+		const spadesCard = spadesContainer.querySelector('.card-front');
 		expect(spadesCard?.classList.contains('red')).toBe(false);
 
 		const { container: clubsContainer } = render(Card, { 
 			props: { suit: '♣' } 
 		});
-		const clubsCard = clubsContainer.querySelector('.card');
+		const clubsCard = clubsContainer.querySelector('.card-front');
 		expect(clubsCard?.classList.contains('red')).toBe(false);
 	});
 
@@ -80,18 +80,21 @@ describe('Card', () => {
 		const { container } = render(Card, { 
 			props: { class: 'custom-card' } 
 		});
-		const card = container.querySelector('.card');
+		const card = container.querySelector('.card-front');
 		
 		expect(card?.classList.contains('custom-card')).toBe(true);
 	});
 
 	it('has proper card structure', () => {
 		const { container } = render(Card);
-		const card = container.querySelector('.card');
-		const topLeft = card?.querySelector('.top-left');
-		const center = card?.querySelector('.card-center');
-		const bottomRight = card?.querySelector('.bottom-right');
+		const cardFront = container.querySelector('.card-front');
+		const cardBack = container.querySelector('.card-back');
+		const topLeft = cardFront?.querySelector('.top-left');
+		const center = cardFront?.querySelector('.card-center');
+		const bottomRight = cardFront?.querySelector('.bottom-right');
 		
+		expect(cardFront).toBeTruthy();
+		expect(cardBack).toBeTruthy();
 		expect(topLeft).toBeTruthy();
 		expect(center).toBeTruthy();
 		expect(bottomRight).toBeTruthy();
