@@ -2,10 +2,20 @@
 	import PlayingField from '$lib/components/PlayingField.svelte';
 	import Card from '$lib/components/Card.svelte';
 
-	let cardPosition = $state({ x: 100, y: 100 });
-	let cardFlipped = $state(false);
+	interface CardState {
+		position: { x: number; y: number };
+		flipped: boolean;
+		suit: string;
+		rank: string;
+	}
 
-	function handleCardPositionChange(newX: number, newY: number) {
+	let cards = $state<CardState[]>([
+		{ position: { x: 100, y: 100 }, flipped: false, suit: '♠', rank: 'A' },
+		{ position: { x: 250, y: 150 }, flipped: false, suit: '♥', rank: 'K' },
+		{ position: { x: 400, y: 200 }, flipped: false, suit: '♦', rank: 'Q' }
+	]);
+
+	function handleCardPositionChange(cardIndex: number, newX: number, newY: number) {
 		// Boundary checking - keep card within playing field
 		const fieldWidth = 800;
 		const fieldHeight = 600;
@@ -15,11 +25,11 @@
 		const constrainedX = Math.max(0, Math.min(newX, fieldWidth - cardWidth));
 		const constrainedY = Math.max(0, Math.min(newY, fieldHeight - cardHeight));
 
-		cardPosition = { x: constrainedX, y: constrainedY };
+		cards[cardIndex].position = { x: constrainedX, y: constrainedY };
 	}
 
-	function handleCardFlipChange(flipped: boolean) {
-		cardFlipped = flipped;
+	function handleCardFlipChange(cardIndex: number, flipped: boolean) {
+		cards[cardIndex].flipped = flipped;
 	}
 </script>
 
@@ -30,20 +40,23 @@
 
 <main>
 	<h1>Card Game Engine</h1>
-	<p>Click and drag the card to move it around the playing field!</p>
-	<p>Double-click the card to flip it over and see the back design.</p>
+	<p>Click and drag any card to move it around the playing field!</p>
+	<p>Double-click any card to flip it over and see the back design.</p>
+	<p>Each card moves and flips independently.</p>
 	
 	<div class="game-container">
 		<PlayingField>
-			<Card 
-				suit="♠" 
-				rank="A"
-				x={cardPosition.x}
-				y={cardPosition.y}
-				flipped={cardFlipped}
-				onPositionChange={handleCardPositionChange}
-				onFlipChange={handleCardFlipChange}
-			/>
+			{#each cards as card, index}
+				<Card 
+					suit={card.suit} 
+					rank={card.rank}
+					x={card.position.x}
+					y={card.position.y}
+					flipped={card.flipped}
+					onPositionChange={(newX, newY) => handleCardPositionChange(index, newX, newY)}
+					onFlipChange={(flipped) => handleCardFlipChange(index, flipped)}
+				/>
+			{/each}
 		</PlayingField>
 	</div>
 </main>

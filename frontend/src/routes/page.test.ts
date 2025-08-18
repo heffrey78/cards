@@ -7,55 +7,86 @@ describe('Main Game Page', () => {
 		render(Page);
 		
 		expect(screen.getByText('Card Game Engine')).toBeInTheDocument();
-		expect(screen.getByText(/Click and drag the card/)).toBeInTheDocument();
-		expect(screen.getByText(/Double-click the card to flip/)).toBeInTheDocument();
+		expect(screen.getByText(/Click and drag any card/)).toBeInTheDocument();
+		expect(screen.getByText(/Double-click any card to flip/)).toBeInTheDocument();
+		expect(screen.getByText(/Each card moves and flips independently/)).toBeInTheDocument();
 	});
 
-	it('displays playing field and card', () => {
+	it('displays playing field and three cards', () => {
 		const { container } = render(Page);
 		
 		const playingField = container.querySelector('.playing-field');
-		const card = container.querySelector('.card-container');
+		const cards = container.querySelectorAll('.card-container');
 		
 		expect(playingField).toBeInTheDocument();
-		expect(card).toBeInTheDocument();
+		expect(cards).toHaveLength(3);
 	});
 
-	it('positions card at initial coordinates', () => {
+	it('positions cards at initial coordinates', () => {
 		const { container } = render(Page);
-		const card = container.querySelector('.card-container');
+		const cards = container.querySelectorAll('.card-container');
 		
-		expect(card?.getAttribute('style')).toContain('left: 100px');
-		expect(card?.getAttribute('style')).toContain('top: 100px');
+		// First card at (100, 100)
+		expect(cards[0]?.getAttribute('style')).toContain('left: 100px');
+		expect(cards[0]?.getAttribute('style')).toContain('top: 100px');
+		
+		// Second card at (250, 150)
+		expect(cards[1]?.getAttribute('style')).toContain('left: 250px');
+		expect(cards[1]?.getAttribute('style')).toContain('top: 150px');
+		
+		// Third card at (400, 200)
+		expect(cards[2]?.getAttribute('style')).toContain('left: 400px');
+		expect(cards[2]?.getAttribute('style')).toContain('top: 200px');
 	});
 
-	it('card is draggable', () => {
+	it('all cards are draggable', () => {
 		const { container } = render(Page);
-		const card = container.querySelector('.card-container');
+		const cards = container.querySelectorAll('.card-container');
 		
-		expect(card?.getAttribute('role')).toBe('button');
-		expect(card?.getAttribute('tabindex')).toBe('0');
+		cards.forEach(card => {
+			expect(card?.getAttribute('role')).toBe('button');
+			expect(card?.getAttribute('tabindex')).toBe('0');
+		});
 	});
 
-	it('has flip functionality available', async () => {
+	it('each card has flip functionality available', async () => {
 		const { container } = render(Page);
-		const cardInner = container.querySelector('.card-inner');
-		const cardFront = container.querySelector('.card-front');
-		const cardBack = container.querySelector('.card-back');
+		const cardInners = container.querySelectorAll('.card-inner');
+		const cardFronts = container.querySelectorAll('.card-front');
+		const cardBacks = container.querySelectorAll('.card-back');
 		
-		// Should have both card faces and start unflipped
-		expect(cardFront).toBeInTheDocument();
-		expect(cardBack).toBeInTheDocument();
-		expect(cardInner?.classList.contains('flipped')).toBe(false);
+		// Should have both card faces for each card and start unflipped
+		expect(cardFronts).toHaveLength(3);
+		expect(cardBacks).toHaveLength(3);
+		
+		cardInners.forEach(cardInner => {
+			expect(cardInner?.classList.contains('flipped')).toBe(false);
+		});
 	});
 
-	it('displays Ace of Spades by default', () => {
+	it('displays different cards: Ace of Spades, King of Hearts, Queen of Diamonds', () => {
 		const { container } = render(Page);
 		const ranks = container.querySelectorAll('.rank');
 		const suits = container.querySelectorAll('.suit');
 		
+		// Each card has rank/suit displayed twice (top-left and bottom-right)
+		// First card - Ace of Spades
 		expect(ranks[0]?.textContent).toBe('A');
 		expect(suits[0]?.textContent).toBe('♠');
+		expect(ranks[1]?.textContent).toBe('A');
+		expect(suits[1]?.textContent).toBe('♠');
+		
+		// Second card - King of Hearts
+		expect(ranks[2]?.textContent).toBe('K');
+		expect(suits[2]?.textContent).toBe('♥');
+		expect(ranks[3]?.textContent).toBe('K');
+		expect(suits[3]?.textContent).toBe('♥');
+		
+		// Third card - Queen of Diamonds
+		expect(ranks[4]?.textContent).toBe('Q');
+		expect(suits[4]?.textContent).toBe('♦');
+		expect(ranks[5]?.textContent).toBe('Q');
+		expect(suits[5]?.textContent).toBe('♦');
 	});
 
 	it('has proper page metadata', () => {
