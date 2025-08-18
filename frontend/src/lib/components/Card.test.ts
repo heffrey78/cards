@@ -100,4 +100,131 @@ describe('Card', () => {
 		expect(bottomRight).toBeTruthy();
 		expect(center?.querySelector('.suit-large')).toBeTruthy();
 	});
+
+	describe('CCG card type', () => {
+		it('renders CCG card with name, attack, and health', () => {
+			const { container } = render(Card, { 
+				props: { 
+					cardType: 'ccg',
+					name: 'Flame Warrior',
+					attack: 3,
+					health: 2,
+					description: 'A fierce warrior',
+					imageUrl: 'https://example.com/image.png'
+				} 
+			});
+			
+			const cardFront = container.querySelector('.card-front');
+			expect(cardFront?.classList.contains('ccg')).toBe(true);
+			
+			const nameElement = container.querySelector('.ccg-name');
+			expect(nameElement?.textContent).toBe('Flame Warrior');
+			
+			const attackElement = container.querySelector('.attack');
+			expect(attackElement?.textContent).toBe('3');
+			
+			const healthElement = container.querySelector('.health');
+			expect(healthElement?.textContent).toBe('2');
+		});
+
+		it('renders CCG card description', () => {
+			const description = 'A fierce warrior wielding flames of destruction.';
+			const { container } = render(Card, { 
+				props: { 
+					cardType: 'ccg',
+					name: 'Flame Warrior',
+					description
+				} 
+			});
+			
+			const descriptionElement = container.querySelector('.ccg-description');
+			expect(descriptionElement?.textContent).toBe(description);
+		});
+
+		it('renders CCG card image', () => {
+			const imageUrl = 'https://example.com/flame-warrior.png';
+			const { container } = render(Card, { 
+				props: { 
+					cardType: 'ccg',
+					name: 'Flame Warrior',
+					imageUrl
+				} 
+			});
+			
+			const imageElement = container.querySelector('.ccg-image img');
+			expect(imageElement?.getAttribute('src')).toBe(imageUrl);
+			expect(imageElement?.getAttribute('alt')).toBe('Flame Warrior');
+		});
+
+		it('has proper CCG card structure', () => {
+			const { container } = render(Card, { 
+				props: { 
+					cardType: 'ccg',
+					name: 'Test Card',
+					attack: 1,
+					health: 1,
+					description: 'Test description',
+					imageUrl: 'https://example.com/test.png'
+				} 
+			});
+			
+			const ccgHeader = container.querySelector('.ccg-header');
+			const ccgImage = container.querySelector('.ccg-image');
+			const ccgDescription = container.querySelector('.ccg-description');
+			const ccgStats = container.querySelector('.ccg-stats');
+			
+			expect(ccgHeader).toBeTruthy();
+			expect(ccgImage).toBeTruthy();
+			expect(ccgDescription).toBeTruthy();
+			expect(ccgStats).toBeTruthy();
+		});
+
+		it('does not render classic card elements for CCG cards', () => {
+			const { container } = render(Card, { 
+				props: { 
+					cardType: 'ccg',
+					name: 'Test Card'
+				} 
+			});
+			
+			const topLeft = container.querySelector('.top-left');
+			const center = container.querySelector('.card-center');
+			const bottomRight = container.querySelector('.bottom-right');
+			
+			expect(topLeft).toBeFalsy();
+			expect(center).toBeFalsy();
+			expect(bottomRight).toBeFalsy();
+		});
+	});
+
+	describe('Classic card type', () => {
+		it('renders classic card elements by default', () => {
+			const { container } = render(Card);
+			
+			const cardFront = container.querySelector('.card-front');
+			expect(cardFront?.classList.contains('ccg')).toBe(false);
+			
+			const topLeft = container.querySelector('.top-left');
+			const center = container.querySelector('.card-center');
+			const bottomRight = container.querySelector('.bottom-right');
+			
+			expect(topLeft).toBeTruthy();
+			expect(center).toBeTruthy();
+			expect(bottomRight).toBeTruthy();
+		});
+
+		it('does not render CCG elements for classic cards', () => {
+			const { container } = render(Card, { 
+				props: { cardType: 'classic' }
+			});
+			
+			const ccgHeader = container.querySelector('.ccg-header');
+			const ccgImage = container.querySelector('.ccg-image');
+			const ccgDescription = container.querySelector('.ccg-description');
+			
+			expect(ccgHeader).toBeFalsy();
+			expect(ccgImage).toBeFalsy();
+			expect(ccgDescription).toBeFalsy();
+		});
+	});
 });

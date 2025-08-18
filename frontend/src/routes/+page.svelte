@@ -1,29 +1,46 @@
 <script lang="ts">
 	import PlayingField from '$lib/components/PlayingField.svelte';
 	import Card from '$lib/components/Card.svelte';
-	import { DEFAULT_GAME_CONFIG, generateInitialCardPositions, generateCardData, type GameConfig } from '$lib/config/gameConfig';
+	import { DEFAULT_GAME_CONFIG, generateInitialCardPositions, generateCardData, type GameConfig, type CardData } from '$lib/config/gameConfig';
 
 	interface CardState {
 		position: { x: number; y: number };
 		flipped: boolean;
-		suit: string;
-		rank: string;
+		cardType: 'classic' | 'ccg';
+		// Classic card properties
+		suit?: string;
+		rank?: string;
+		// CCG card properties
+		name?: string;
+		attack?: number;
+		health?: number;
+		description?: string;
+		imageUrl?: string;
 		zIndex: number;
 	}
 
 	// Configuration - can be modified to change card count
 	let gameConfig = $state<GameConfig>({ ...DEFAULT_GAME_CONFIG, cardCount: 5 });
+	let cardMode = $state<'classic' | 'ccg'>('classic');
 	
 	// Generate initial card data and positions
 	function initializeCards(): CardState[] {
 		const positions = generateInitialCardPositions(gameConfig);
-		const cardData = generateCardData(gameConfig.cardCount);
+		const cardData = generateCardData(gameConfig.cardCount, cardMode);
 		
 		return cardData.map((card, index) => ({
 			position: positions[index],
 			flipped: false,
-			suit: card.suit,
-			rank: card.rank,
+			cardType: card.cardType,
+			// Classic properties
+			suit: card.cardType === 'classic' ? card.suit : undefined,
+			rank: card.cardType === 'classic' ? card.rank : undefined,
+			// CCG properties
+			name: card.cardType === 'ccg' ? card.name : undefined,
+			attack: card.cardType === 'ccg' ? card.attack : undefined,
+			health: card.cardType === 'ccg' ? card.health : undefined,
+			description: card.cardType === 'ccg' ? card.description : undefined,
+			imageUrl: card.cardType === 'ccg' ? card.imageUrl : undefined,
 			zIndex: gameConfig.zIndex.base
 		}));
 	}
@@ -89,6 +106,12 @@
 		cards[cardIndex].flipped = flipped;
 	}
 
+	function switchCardMode(newMode: 'classic' | 'ccg') {
+		cardMode = newMode;
+		cards = initializeCards();
+		highestStackZIndex = gameConfig.zIndex.base;
+	}
+
 	function updateCardCount(newCount: number) {
 		const oldCount = gameConfig.cardCount;
 		gameConfig.cardCount = newCount;
@@ -96,7 +119,7 @@
 		if (newCount > oldCount) {
 			// Add new cards while preserving existing ones
 			const newPositions = generateInitialCardPositions(gameConfig);
-			const newCardData = generateCardData(newCount);
+			const newCardData = generateCardData(newCount, cardMode);
 			
 			// Update existing card positions for new layout
 			cards.forEach((card, index) => {
@@ -111,8 +134,14 @@
 				cards.push({
 					position: newPositions[i],
 					flipped: false,
-					suit: cardData.suit,
-					rank: cardData.rank,
+					cardType: cardData.cardType,
+					suit: cardData.cardType === 'classic' ? cardData.suit : undefined,
+					rank: cardData.cardType === 'classic' ? cardData.rank : undefined,
+					name: cardData.cardType === 'ccg' ? cardData.name : undefined,
+					attack: cardData.cardType === 'ccg' ? cardData.attack : undefined,
+					health: cardData.cardType === 'ccg' ? cardData.health : undefined,
+					description: cardData.cardType === 'ccg' ? cardData.description : undefined,
+					imageUrl: cardData.cardType === 'ccg' ? cardData.imageUrl : undefined,
 					zIndex: gameConfig.zIndex.base
 				});
 			}
@@ -147,32 +176,52 @@
 	<p>Drag one card over another and release to stack them!</p>
 	
 	<div class="controls">
-		<label for="card-count">Number of cards:</label>
-		<input 
-			type="range" 
-			id="card-count"
-			min="1" 
-			max="15" 
-			bind:value={gameConfig.cardCount}
-			oninput={(e) => {
-				const target = e.target;
-				if (target instanceof HTMLInputElement) {
-					const value = parseInt(target.value, 10);
-					if (!isNaN(value) && value >= 1 && value <= 15) {
-						updateCardCount(value);
+		<div class="control-group">
+			<label for="card-mode">Card Type:</label>
+			<select 
+				id="card-mode"
+				bind:value={cardMode}
+				onchange={() => switchCardMode(cardMode)}
+			>
+				<option value="classic">Classic</option>
+				<option value="ccg">CCG</option>
+			</select>
+		</div>
+		
+		<div class="control-group">
+			<label for="card-count">Number of cards:</label>
+			<input 
+				type="range" 
+				id="card-count"
+				min="1" 
+				max="15" 
+				bind:value={gameConfig.cardCount}
+				oninput={(e) => {
+					const target = e.target;
+					if (target instanceof HTMLInputElement) {
+						const value = parseInt(target.value, 10);
+						if (!isNaN(value) && value >= 1 && value <= 15) {
+							updateCardCount(value);
+						}
 					}
-				}
-			}}
-		/>
-		<span>{gameConfig.cardCount}</span>
+				}}
+			/>
+			<span>{gameConfig.cardCount}</span>
+		</div>
 	</div>
 	
 	<div class="game-container">
 		<PlayingField>
 			{#each cards as card, index}
 				<Card 
+					cardType={card.cardType}
 					suit={card.suit} 
 					rank={card.rank}
+					name={card.name}
+					attack={card.attack}
+					health={card.health}
+					description={card.description}
+					imageUrl={card.imageUrl}
 					x={card.position.x}
 					y={card.position.y}
 					flipped={card.flipped}
@@ -211,14 +260,20 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		gap: 1rem;
+		gap: 2rem;
 		margin-bottom: 2rem;
 		padding: 1rem;
 		background: #f5f5f5;
 		border-radius: 8px;
-		max-width: 400px;
+		max-width: 600px;
 		margin-left: auto;
 		margin-right: auto;
+	}
+
+	.control-group {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
 	}
 
 	.controls label {
@@ -229,6 +284,14 @@
 	.controls input[type="range"] {
 		flex: 1;
 		min-width: 150px;
+	}
+
+	.controls select {
+		padding: 0.25rem 0.5rem;
+		border: 1px solid #ccc;
+		border-radius: 4px;
+		background: white;
+		font-size: 0.9rem;
 	}
 
 	.controls span {

@@ -1,7 +1,18 @@
 <script lang="ts">
 	interface CardProps {
+		// Classic card properties
 		suit?: string;
 		rank?: string;
+		
+		// CCG card properties
+		cardType?: 'classic' | 'ccg';
+		name?: string;
+		attack?: number;
+		health?: number;
+		description?: string;
+		imageUrl?: string;
+		
+		// Common properties
 		x?: number;
 		y?: number;
 		width?: number;
@@ -17,8 +28,19 @@
 	}
 
 	let { 
+		// Classic card props
 		suit = '♠', 
 		rank = 'A', 
+		
+		// CCG card props
+		cardType = 'classic',
+		name = '',
+		attack = 0,
+		health = 0,
+		description = '',
+		imageUrl = '',
+		
+		// Common props
 		x = 0, 
 		y = 0, 
 		width = 80, 
@@ -190,20 +212,39 @@
 >
 	<div class="card-inner" class:flipped>
 		<!-- Card Front -->
-		<div class="card-face card-front {className}" class:red={isRed}>
-			<div class="card-corner top-left">
-				<div class="rank">{rank}</div>
-				<div class="suit">{suit}</div>
-			</div>
-			
-			<div class="card-center">
-				<div class="suit-large">{suit}</div>
-			</div>
-			
-			<div class="card-corner bottom-right">
-				<div class="rank">{rank}</div>
-				<div class="suit">{suit}</div>
-			</div>
+		<div class="card-face card-front {className}" class:red={isRed} class:ccg={cardType === 'ccg'}>
+			{#if cardType === 'classic'}
+				<div class="card-corner top-left">
+					<div class="rank">{rank}</div>
+					<div class="suit">{suit}</div>
+				</div>
+				
+				<div class="card-center">
+					<div class="suit-large">{suit}</div>
+				</div>
+				
+				<div class="card-corner bottom-right">
+					<div class="rank">{rank}</div>
+					<div class="suit">{suit}</div>
+				</div>
+			{:else if cardType === 'ccg'}
+				<!-- CCG Card Layout -->
+				<div class="ccg-header">
+					<div class="ccg-name">{name}</div>
+					<div class="ccg-stats">
+						<span class="attack">{attack}</span>
+						<span class="health">{health}</span>
+					</div>
+				</div>
+				
+				<div class="ccg-image">
+					<img src={imageUrl} alt={name} />
+				</div>
+				
+				<div class="ccg-description">
+					{description}
+				</div>
+			{/if}
 		</div>
 
 		<!-- Card Back -->
@@ -380,4 +421,89 @@
 	.diamond:nth-child(2) { opacity: 0.7; }
 	.diamond:nth-child(3) { opacity: 0.7; }
 	.diamond:nth-child(4) { opacity: 0.9; }
+
+	/* CCG Card Styles */
+	.card-front.ccg {
+		display: flex;
+		flex-direction: column;
+		padding: 6px;
+		background: linear-gradient(135deg, #f5f5f5, #e8e8e8);
+		border: 2px solid #444;
+	}
+
+	.ccg-header {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		margin-bottom: 4px;
+	}
+
+	.ccg-name {
+		font-size: 10px;
+		font-weight: bold;
+		color: #333;
+		text-overflow: ellipsis;
+		overflow: hidden;
+		white-space: nowrap;
+		flex: 1;
+	}
+
+	.ccg-stats {
+		display: flex;
+		gap: 4px;
+		font-size: 10px;
+		font-weight: bold;
+	}
+
+	.attack {
+		background: #ff6b6b;
+		color: white;
+		padding: 2px 4px;
+		border-radius: 3px;
+		min-width: 16px;
+		text-align: center;
+	}
+
+	.health {
+		background: #4ecdc4;
+		color: white;
+		padding: 2px 4px;
+		border-radius: 3px;
+		min-width: 16px;
+		text-align: center;
+	}
+
+	.ccg-image {
+		flex: 1;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		margin: 4px 0;
+		min-height: 60px;
+		background: #ddd;
+		border-radius: 4px;
+		overflow: hidden;
+	}
+
+	.ccg-image img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.ccg-description {
+		font-size: 8px;
+		color: #555;
+		text-align: center;
+		line-height: 1.2;
+		background: rgba(255, 255, 255, 0.8);
+		padding: 3px;
+		border-radius: 3px;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+	}
 </style>
