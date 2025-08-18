@@ -9,8 +9,11 @@
 		class?: string;
 		draggable?: boolean;
 		flipped?: boolean;
+		zIndex?: number;
 		onPositionChange?: (x: number, y: number) => void;
 		onFlipChange?: (flipped: boolean) => void;
+		onDragStart?: () => void;
+		onDragEnd?: () => void;
 	}
 
 	let { 
@@ -23,8 +26,11 @@
 		class: className = '',
 		draggable = true,
 		flipped = false,
+		zIndex = 1,
 		onPositionChange,
 		onFlipChange,
+		onDragStart,
+		onDragEnd,
 		...props 
 	}: CardProps = $props();
 
@@ -112,6 +118,11 @@
 		
 		isDragging = true;
 		
+		// Notify parent that drag started
+		if (onDragStart) {
+			onDragStart();
+		}
+		
 		// Calculate offset relative to the card's current position in the playing field
 		const parentRect = cardElement.parentElement?.getBoundingClientRect();
 		const parentX = parentRect?.left || 0;
@@ -152,6 +163,11 @@
 		if (onPositionChange) {
 			onPositionChange(x, y);
 		}
+
+		// Notify parent that drag ended
+		if (onDragEnd) {
+			onDragEnd();
+		}
 	}
 </script>
 
@@ -165,6 +181,7 @@
 		top: {y}px; 
 		width: {width}px; 
 		height: {height}px;
+		z-index: {zIndex};
 	"
 	onmousedown={handleMouseDown}
 	role="button"

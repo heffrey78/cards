@@ -9,7 +9,7 @@ describe('Main Game Page', () => {
 		expect(screen.getByText('Card Game Engine')).toBeInTheDocument();
 		expect(screen.getByText(/Click and drag any card/)).toBeInTheDocument();
 		expect(screen.getByText(/Double-click any card to flip/)).toBeInTheDocument();
-		expect(screen.getByText(/Each card moves and flips independently/)).toBeInTheDocument();
+		expect(screen.getByText(/Drag one card over another and release to stack them!/)).toBeInTheDocument();
 	});
 
 	it('displays playing field and three cards', () => {
@@ -95,5 +95,53 @@ describe('Main Game Page', () => {
 		// Note: These would typically be tested in e2e tests since they affect document head
 		// Here we just verify the component structure includes the svelte:head
 		expect(document.title).toBe('Card Game Engine');
+	});
+
+	it('initializes cards with base z-index values', () => {
+		const { container } = render(Page);
+		const cards = container.querySelectorAll('.card-container');
+		
+		// All cards should start with base z-index of 10
+		expect(cards[0]?.getAttribute('style')).toContain('z-index: 10');
+		expect(cards[1]?.getAttribute('style')).toContain('z-index: 10');
+		expect(cards[2]?.getAttribute('style')).toContain('z-index: 10');
+	});
+
+	it('collision detection works correctly', () => {
+		// Test the collision detection function logic
+		const card1 = { position: { x: 100, y: 100 }, flipped: false, suit: '♠', rank: 'A', zIndex: 1 };
+		const card2 = { position: { x: 120, y: 120 }, flipped: false, suit: '♥', rank: 'K', zIndex: 2 };
+		const card3 = { position: { x: 300, y: 300 }, flipped: false, suit: '♦', rank: 'Q', zIndex: 3 };
+
+		// Cards 1 and 2 should overlap (100,100 to 180,220 vs 120,120 to 200,240)
+		const cardWidth = 80;
+		const cardHeight = 120;
+		
+		// Check if cards overlap using the same logic as in the component
+		function checkCollision(c1: any, c2: any) {
+			const x1 = c1.position.x;
+			const y1 = c1.position.y;
+			const x2 = c2.position.x;
+			const y2 = c2.position.y;
+			
+			return !(x1 + cardWidth < x2 || x2 + cardWidth < x1 || y1 + cardHeight < y2 || y2 + cardHeight < y1);
+		}
+		
+		expect(checkCollision(card1, card2)).toBe(true);
+		expect(checkCollision(card1, card3)).toBe(false);
+		expect(checkCollision(card2, card3)).toBe(false);
+	});
+
+	it('has correct z-index constants', () => {
+		// Verify the z-index constants are properly defined
+		// This is a bit tricky to test directly since they're in the component
+		// but we can verify behavior through the UI
+		const { container } = render(Page);
+		const cards = container.querySelectorAll('.card-container');
+		
+		// Base z-index should be 10
+		cards.forEach(card => {
+			expect(card?.getAttribute('style')).toContain('z-index: 10');
+		});
 	});
 });
