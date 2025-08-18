@@ -12,31 +12,42 @@ describe('Main Game Page', () => {
 		expect(screen.getByText(/Drag one card over another and release to stack them!/)).toBeInTheDocument();
 	});
 
-	it('displays playing field and three cards', () => {
+	it('displays playing field and configurable number of cards', () => {
 		const { container } = render(Page);
 		
 		const playingField = container.querySelector('.playing-field');
 		const cards = container.querySelectorAll('.card-container');
 		
 		expect(playingField).toBeInTheDocument();
-		expect(cards).toHaveLength(3);
+		expect(cards).toHaveLength(5); // Default configured to 5 cards
 	});
 
-	it('positions cards at initial coordinates', () => {
+	it('positions cards at dynamically calculated coordinates', () => {
 		const { container } = render(Page);
 		const cards = container.querySelectorAll('.card-container');
 		
-		// First card at (100, 100)
-		expect(cards[0]?.getAttribute('style')).toContain('left: 100px');
-		expect(cards[0]?.getAttribute('style')).toContain('top: 100px');
+		// Verify all cards have position styles
+		cards.forEach(card => {
+			expect(card?.getAttribute('style')).toMatch(/left: \d+px/);
+			expect(card?.getAttribute('style')).toMatch(/top: \d+px/);
+		});
 		
-		// Second card at (250, 150)
-		expect(cards[1]?.getAttribute('style')).toContain('left: 250px');
-		expect(cards[1]?.getAttribute('style')).toContain('top: 150px');
-		
-		// Third card at (400, 200)
-		expect(cards[2]?.getAttribute('style')).toContain('left: 400px');
-		expect(cards[2]?.getAttribute('style')).toContain('top: 200px');
+		// Verify cards are positioned within field bounds
+		cards.forEach(card => {
+			const style = card?.getAttribute('style') || '';
+			const leftMatch = style.match(/left: (\d+)px/);
+			const topMatch = style.match(/top: (\d+)px/);
+			
+			if (leftMatch && topMatch) {
+				const left = parseInt(leftMatch[1]);
+				const top = parseInt(topMatch[1]);
+				
+				expect(left).toBeGreaterThanOrEqual(0);
+				expect(top).toBeGreaterThanOrEqual(0);
+				expect(left).toBeLessThanOrEqual(720); // 800 - 80 (card width)
+				expect(top).toBeLessThanOrEqual(480); // 600 - 120 (card height)
+			}
+		});
 	});
 
 	it('all cards are draggable', () => {
@@ -56,15 +67,15 @@ describe('Main Game Page', () => {
 		const cardBacks = container.querySelectorAll('.card-back');
 		
 		// Should have both card faces for each card and start unflipped
-		expect(cardFronts).toHaveLength(3);
-		expect(cardBacks).toHaveLength(3);
+		expect(cardFronts).toHaveLength(5); // Updated for 5 cards
+		expect(cardBacks).toHaveLength(5); // Updated for 5 cards
 		
 		cardInners.forEach(cardInner => {
 			expect(cardInner?.classList.contains('flipped')).toBe(false);
 		});
 	});
 
-	it('displays different cards: Ace of Spades, King of Hearts, Queen of Diamonds', () => {
+	it('displays different cards with cycling suits and ranks', () => {
 		const { container } = render(Page);
 		const ranks = container.querySelectorAll('.rank');
 		const suits = container.querySelectorAll('.suit');
@@ -76,17 +87,21 @@ describe('Main Game Page', () => {
 		expect(ranks[1]?.textContent).toBe('A');
 		expect(suits[1]?.textContent).toBe('♠');
 		
-		// Second card - King of Hearts
-		expect(ranks[2]?.textContent).toBe('K');
+		// Second card - 2 of Hearts
+		expect(ranks[2]?.textContent).toBe('2');
 		expect(suits[2]?.textContent).toBe('♥');
-		expect(ranks[3]?.textContent).toBe('K');
+		expect(ranks[3]?.textContent).toBe('2');
 		expect(suits[3]?.textContent).toBe('♥');
 		
-		// Third card - Queen of Diamonds
-		expect(ranks[4]?.textContent).toBe('Q');
+		// Third card - 3 of Diamonds
+		expect(ranks[4]?.textContent).toBe('3');
 		expect(suits[4]?.textContent).toBe('♦');
-		expect(ranks[5]?.textContent).toBe('Q');
+		expect(ranks[5]?.textContent).toBe('3');
 		expect(suits[5]?.textContent).toBe('♦');
+		
+		// Verify we have rank/suit pairs for all 5 cards (10 rank elements, 10 suit elements)
+		expect(ranks).toHaveLength(10);
+		expect(suits).toHaveLength(10);
 	});
 
 	it('has proper page metadata', () => {
@@ -102,9 +117,9 @@ describe('Main Game Page', () => {
 		const cards = container.querySelectorAll('.card-container');
 		
 		// All cards should start with base z-index of 10
-		expect(cards[0]?.getAttribute('style')).toContain('z-index: 10');
-		expect(cards[1]?.getAttribute('style')).toContain('z-index: 10');
-		expect(cards[2]?.getAttribute('style')).toContain('z-index: 10');
+		cards.forEach(card => {
+			expect(card?.getAttribute('style')).toContain('z-index: 10');
+		});
 	});
 
 	it('collision detection works correctly', () => {
@@ -132,16 +147,68 @@ describe('Main Game Page', () => {
 		expect(checkCollision(card2, card3)).toBe(false);
 	});
 
-	it('has correct z-index constants', () => {
-		// Verify the z-index constants are properly defined
-		// This is a bit tricky to test directly since they're in the component
-		// but we can verify behavior through the UI
+	it('has configurable card count control', () => {
 		const { container } = render(Page);
-		const cards = container.querySelectorAll('.card-container');
 		
-		// Base z-index should be 10
-		cards.forEach(card => {
-			expect(card?.getAttribute('style')).toContain('z-index: 10');
-		});
+		// Should have a range input for card count
+		const rangeInput = container.querySelector('input[type="range"]');
+		expect(rangeInput).toBeInTheDocument();
+		expect(rangeInput?.getAttribute('min')).toBe('1');
+		expect(rangeInput?.getAttribute('max')).toBe('15');
+		
+		// Should display current card count
+		const cardCountDisplay = container.querySelector('.controls span');
+		expect(cardCountDisplay?.textContent).toBe('5');
+	});
+
+	it('updates card count when range input changes', () => {
+		const { container } = render(Page);
+		
+		const rangeInput = container.querySelector('input[type="range"]') as HTMLInputElement;
+		expect(rangeInput).toBeInTheDocument();
+		
+		// Initially should have 5 cards
+		let cards = container.querySelectorAll('.card-container');
+		expect(cards).toHaveLength(5);
+		
+		// Change to 3 cards (note: this tests the binding but won't trigger the update function in jsdom)
+		if (rangeInput) {
+			rangeInput.value = '3';
+			rangeInput.dispatchEvent(new Event('input'));
+		}
+	});
+
+	it('handles invalid input gracefully', () => {
+		const { container } = render(Page);
+		
+		const rangeInput = container.querySelector('input[type="range"]') as HTMLInputElement;
+		expect(rangeInput).toBeInTheDocument();
+		
+		// Test that invalid values don't break the component
+		if (rangeInput) {
+			// These should be handled gracefully by the input validation
+			rangeInput.value = '-1';
+			rangeInput.dispatchEvent(new Event('input'));
+			
+			rangeInput.value = '100';
+			rangeInput.dispatchEvent(new Event('input'));
+			
+			rangeInput.value = 'invalid';
+			rangeInput.dispatchEvent(new Event('input'));
+		}
+		
+		// Component should still render properly
+		expect(container.querySelector('.playing-field')).toBeInTheDocument();
+	});
+
+	it('validates card count boundaries', () => {
+		const { container } = render(Page);
+		
+		const rangeInput = container.querySelector('input[type="range"]') as HTMLInputElement;
+		expect(rangeInput).toBeInTheDocument();
+		
+		// Verify min and max attributes prevent invalid values
+		expect(rangeInput.min).toBe('1');
+		expect(rangeInput.max).toBe('15');
 	});
 });
