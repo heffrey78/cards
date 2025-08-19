@@ -9,7 +9,7 @@ describe('Main Game Page', () => {
 		expect(screen.getByText('Card Game Engine')).toBeInTheDocument();
 		expect(screen.getByText(/Click and drag any card/)).toBeInTheDocument();
 		expect(screen.getByText(/Double-click any card to flip/)).toBeInTheDocument();
-		expect(screen.getByText(/Drag one card over another and release to stack them!/)).toBeInTheDocument();
+		expect(screen.getByText(/Drag one card over another in the same deck and release to stack them!/)).toBeInTheDocument();
 	});
 
 	it('displays playing field and configurable number of cards', () => {
@@ -19,7 +19,7 @@ describe('Main Game Page', () => {
 		const cards = container.querySelectorAll('.card-container');
 		
 		expect(playingField).toBeInTheDocument();
-		expect(cards).toHaveLength(5); // Default configured to 5 cards
+		expect(cards).toHaveLength(3); // Default configured to 3 cards
 	});
 
 	it('positions cards at dynamically calculated coordinates', () => {
@@ -67,8 +67,8 @@ describe('Main Game Page', () => {
 		const cardBacks = container.querySelectorAll('.card-back');
 		
 		// Should have both card faces for each card and start unflipped
-		expect(cardFronts).toHaveLength(5); // Updated for 5 cards
-		expect(cardBacks).toHaveLength(5); // Updated for 5 cards
+		expect(cardFronts).toHaveLength(3); // Updated for 3 cards
+		expect(cardBacks).toHaveLength(3); // Updated for 3 cards
 		
 		cardInners.forEach(cardInner => {
 			expect(cardInner?.classList.contains('flipped')).toBe(false);
@@ -99,9 +99,9 @@ describe('Main Game Page', () => {
 		expect(ranks[5]?.textContent).toBe('3');
 		expect(suits[5]?.textContent).toBe('♦');
 		
-		// Verify we have rank/suit pairs for all 5 cards (10 rank elements, 10 suit elements)
-		expect(ranks).toHaveLength(10);
-		expect(suits).toHaveLength(10);
+		// Verify we have rank/suit pairs for all 3 cards (6 rank elements, 6 suit elements)
+		expect(ranks).toHaveLength(6);
+		expect(suits).toHaveLength(6);
 	});
 
 	it('has proper page metadata', () => {
@@ -158,7 +158,7 @@ describe('Main Game Page', () => {
 		
 		// Should display current card count
 		const cardCountDisplay = container.querySelector('.controls span');
-		expect(cardCountDisplay?.textContent).toBe('5');
+		expect(cardCountDisplay?.textContent).toBe('3');
 	});
 
 	it('updates card count when range input changes', () => {
@@ -167,13 +167,13 @@ describe('Main Game Page', () => {
 		const rangeInput = container.querySelector('input[type="range"]') as HTMLInputElement;
 		expect(rangeInput).toBeInTheDocument();
 		
-		// Initially should have 5 cards
+		// Initially should have 3 cards
 		let cards = container.querySelectorAll('.card-container');
-		expect(cards).toHaveLength(5);
+		expect(cards).toHaveLength(3);
 		
-		// Change to 3 cards (note: this tests the binding but won't trigger the update function in jsdom)
+		// Change to 5 cards (note: this tests the binding but won't trigger the update function in jsdom)
 		if (rangeInput) {
-			rangeInput.value = '3';
+			rangeInput.value = '5';
 			rangeInput.dispatchEvent(new Event('input'));
 		}
 	});

@@ -2,9 +2,27 @@
  * Game configuration interface and settings
  */
 
-export interface GameConfig {
-	/** Number of cards to display on the playing field */
+export interface DeckSection {
+	/** Deck identifier */
+	id: number;
+	/** Section boundaries within the playing field */
+	bounds: {
+		x: number;
+		y: number;
+		width: number;
+		height: number;
+	};
+	/** Cards assigned to this deck */
 	cardCount: number;
+	/** Maximum cards allowed in this deck (1-15) */
+	maxCards: number;
+}
+
+export interface GameConfig {
+	/** Number of decks (1-2) */
+	deckCount: number;
+	/** Deck sections configuration */
+	deckSections: DeckSection[];
 	/** Playing field dimensions */
 	fieldDimensions: {
 		width: number;
@@ -23,7 +41,15 @@ export interface GameConfig {
 }
 
 export const DEFAULT_GAME_CONFIG: GameConfig = {
-	cardCount: 3,
+	deckCount: 1,
+	deckSections: [
+		{
+			id: 0,
+			bounds: { x: 0, y: 0, width: 800, height: 600 },
+			cardCount: 3,
+			maxCards: 15
+		}
+	],
 	fieldDimensions: {
 		width: 800,
 		height: 600
@@ -39,14 +65,54 @@ export const DEFAULT_GAME_CONFIG: GameConfig = {
 };
 
 /**
- * Creates initial card positions based on configuration
+ * Creates deck sections based on deck count
  */
-export function generateInitialCardPositions(config: GameConfig): Array<{ x: number; y: number }> {
-	if (!config || typeof config !== 'object') {
-		throw new Error('Invalid configuration provided');
+export function generateDeckSections(deckCount: number, fieldDimensions: { width: number; height: number }): DeckSection[] {
+	if (deckCount < 1 || deckCount > 2 || !Number.isInteger(deckCount)) {
+		throw new Error('Deck count must be 1 or 2');
 	}
 	
-	const { cardCount, fieldDimensions, cardDimensions } = config;
+	const sections: DeckSection[] = [];
+	
+	if (deckCount === 1) {
+		// Single deck takes the entire field
+		sections.push({
+			id: 0,
+			bounds: { x: 0, y: 0, width: fieldDimensions.width, height: fieldDimensions.height },
+			cardCount: 3,
+			maxCards: 15
+		});
+	} else {
+		// Two decks split the field vertically
+		const halfWidth = fieldDimensions.width / 2;
+		
+		sections.push({
+			id: 0,
+			bounds: { x: 0, y: 0, width: halfWidth, height: fieldDimensions.height },
+			cardCount: 3,
+			maxCards: 15
+		});
+		
+		sections.push({
+			id: 1,
+			bounds: { x: halfWidth, y: 0, width: halfWidth, height: fieldDimensions.height },
+			cardCount: 3,
+			maxCards: 15
+		});
+	}
+	
+	return sections;
+}
+
+/**
+ * Creates initial card positions for a specific deck section
+ */
+export function generateInitialCardPositions(deckSection: DeckSection, cardDimensions: { width: number; height: number }): Array<{ x: number; y: number }> {
+	if (!deckSection || typeof deckSection !== 'object') {
+		throw new Error('Invalid deck section provided');
+	}
+	
+	const { cardCount, bounds } = deckSection;
 	
 	if (cardCount < 0 || !Number.isInteger(cardCount)) {
 		throw new Error('Card count must be a non-negative integer');
@@ -58,13 +124,13 @@ export function generateInitialCardPositions(config: GameConfig): Array<{ x: num
 	
 	const positions: Array<{ x: number; y: number }> = [];
 	
-	// Calculate grid layout for optimal card distribution
+	// Calculate grid layout for optimal card distribution within the deck section
 	const cols = Math.ceil(Math.sqrt(cardCount));
 	const rows = Math.ceil(cardCount / cols);
 	
-	// Calculate spacing to distribute cards evenly
-	const availableWidth = fieldDimensions.width - cardDimensions.width;
-	const availableHeight = fieldDimensions.height - cardDimensions.height;
+	// Calculate spacing to distribute cards evenly within the section bounds
+	const availableWidth = bounds.width - cardDimensions.width;
+	const availableHeight = bounds.height - cardDimensions.height;
 	
 	const spacingX = cols > 1 ? availableWidth / (cols - 1) : 0;
 	const spacingY = rows > 1 ? availableHeight / (rows - 1) : 0;
@@ -73,13 +139,46 @@ export function generateInitialCardPositions(config: GameConfig): Array<{ x: num
 		const col = i % cols;
 		const row = Math.floor(i / cols);
 		
-		const x = col * spacingX;
-		const y = row * spacingY;
+		const x = bounds.x + (col * spacingX);
+		const y = bounds.y + (row * spacingY);
 		
 		positions.push({ x, y });
 	}
 	
 	return positions;
+}
+
+/**
+ * Checks if a position is within a deck section's bounds
+ */
+export function isPositionInDeckSection(position: { x: number; y: number }, deckSection: DeckSection, cardDimensions: { width: number; height: number }): boolean {
+	const { bounds } = deckSection;
+	
+	return (
+		position.x >= bounds.x &&
+		position.x + cardDimensions.width <= bounds.x + bounds.width &&
+		position.y >= bounds.y &&
+		position.y + cardDimensions.height <= bounds.y + bounds.height
+	);
+}
+
+/**
+ * Constrains a position to stay within a deck section's bounds
+ */
+export function constrainPositionToDeckSection(position: { x: number; y: number }, deckSection: DeckSection, cardDimensions: { width: number; height: number }): { x: number; y: number } {
+	const { bounds } = deckSection;
+	
+	const constrainedX = Math.max(
+		bounds.x,
+		Math.min(position.x, bounds.x + bounds.width - cardDimensions.width)
+	);
+	
+	const constrainedY = Math.max(
+		bounds.y,
+		Math.min(position.y, bounds.y + bounds.height - cardDimensions.height)
+	);
+	
+	return { x: constrainedX, y: constrainedY };
 }
 
 /**
@@ -133,8 +232,8 @@ export type CardData = ClassicCardData | CCGCardData;
  * Generates card data for the specified count and type
  */
 export function generateCardData(count: number, cardType: 'classic' | 'ccg' = 'classic'): CardData[] {
-	if (count < 0 || !Number.isInteger(count)) {
-		throw new Error('Card count must be a non-negative integer');
+	if (count < 0 || count > 15 || !Number.isInteger(count)) {
+		throw new Error('Card count must be between 0 and 15');
 	}
 	
 	if (count === 0) {
